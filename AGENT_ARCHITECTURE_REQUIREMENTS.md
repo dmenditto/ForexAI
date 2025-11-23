@@ -330,36 +330,51 @@ Risk Agent monitors positions → Alerts on threshold breach → Orchestrator ma
 
 ## Agent Prompts (Summary)
 
+### Design Philosophy (Inspired by nof1.ai Alpha Arena)
+
+**Key Insight**: nof1.ai's "Monk Mode" approach shows that **shorter, more opinionated prompts with strict guardrails** can outperform verbose instructions. Their experiments with real money trading reveal:
+- Sensitivity to prompt changes significantly impacts performance
+- Opinionated guardrails on trading thresholds improve risk management
+- Concise system prompts (~50% shorter) can be more effective
+- Real behavioral differences emerge from prompt design (risk tolerance, position sizing, holding time)
+
+**Recommended Approach**: "Monk Mode" style prompts - concise, opinionated, with strict guardrails
+
 ### Orchestrator
 - Coordinate specialized agents
 - Aggregate analyses and make final decisions
 - Require ≥2 agents in agreement
 - Always validate with Risk Agent
 - Prioritize capital preservation
+- **Strict guardrails**: No trade without risk approval, max 3 positions simultaneously
 
 ### Technical Analysis
 - Analyze charts and indicators
 - Provide specific entry/exit levels
 - Assign confidence based on indicator confluence
 - Consider multiple timeframes
+- **Guardrails**: Only signal when ≥3 indicators align, confidence >0.7
 
 ### Fundamental Analysis
 - Focus on interest rate differentials
 - Consider upcoming high-impact events
 - Assess economic divergence
 - Provide medium to long-term outlook
+- **Guardrails**: Flag high-impact events within 24h, avoid trading during major announcements
 
 ### Sentiment Analysis
 - Identify prevailing market narrative
 - Detect sentiment extremes (contrarian signals)
 - Note divergences between sentiment and price
 - Weight by source reliability
+- **Guardrails**: Extreme sentiment (>0.8 or <-0.8) triggers contrarian consideration
 
 ### Risk Management
 - Calculate position sizes (1-2% risk per trade)
 - Check exposure and correlation
 - Enforce all risk limits
 - Approve/reject with clear reasoning
+- **Strict guardrails**: Auto-reject if daily loss >3%, correlation >0.7, or exposure >10% per currency
 
 ## Data Sources
 
@@ -454,15 +469,67 @@ Execution Agent calls existing Pepperstone integration via:
 
 ## Success Metrics
 
+### Performance Metrics
 - Win rate > 50%
 - Sharpe ratio > 1.0
 - Maximum drawdown < 15%
+- Monthly return > 5%
 - Agent agreement rate (measure consensus quality)
 - Execution quality (slippage < 1 pip average)
 - System uptime > 99%
+
+### Behavioral Metrics (Inspired by nof1.ai)
+- **Risk consistency**: Standard deviation of position sizes
+- **Holding time distribution**: Average trade duration
+- **Sizing discipline**: Adherence to risk limits
+- **Prompt sensitivity**: A/B test different prompt variations
+- **Guardrail effectiveness**: % of trades blocked by risk rules
+
+### Benchmark Comparison
+- Compare against nof1.ai Alpha Arena results (equities)
+- Adapt learnings to Forex market characteristics
+- Track model performance across different market conditions
+
+## Key Learnings from nof1.ai Alpha Arena
+
+### Validated Concepts
+1. **AI can trade autonomously in real markets** - Multiple LLMs successfully trading with real money
+2. **Prompt engineering is critical** - Small prompt changes significantly impact performance
+3. **Guardrails improve outcomes** - Opinionated risk management rules in prompts work better
+4. **Shorter prompts can outperform** - "Monk Mode" (~50% shorter) shows competitive results
+5. **Behavioral differences matter** - Models show distinct risk tolerance, sizing, and timing patterns
+
+### Competition Formats (Applicable to Forex)
+- **Baseline**: Standard approach with news/sentiment data
+- **Monk Mode**: Shorter prompts, stricter guardrails (recommended starting point)
+- **Situational Awareness**: Context about market state and other positions
+- **Max Leverage**: Stress-test risk management
+
+### Recommended Implementation Strategy
+1. **Start with "Monk Mode" approach**: Concise prompts with strict guardrails
+2. **A/B test prompt variations**: Measure sensitivity to prompt changes
+3. **Track behavioral metrics**: Monitor risk consistency, holding times, sizing discipline
+4. **Iterate based on real performance**: Use paper trading data to refine prompts
+5. **Consider multiple "modes"**: Different prompt strategies for different market conditions
+
+### Differences: Equities vs Forex
+- **Market hours**: Forex is 24/5 vs equities 9:30-4:00 ET
+- **Leverage**: Forex typically higher leverage (50:1-500:1 vs 2:1-4:1)
+- **Volatility**: Currency pairs generally less volatile than individual stocks
+- **Fundamentals**: Interest rates and macro data more important in Forex
+- **Liquidity**: Major Forex pairs have higher liquidity than most stocks
+
+### Action Items
+- [ ] Design "Monk Mode" style prompts for each agent (concise, opinionated)
+- [ ] Define strict guardrails for risk management
+- [ ] Plan A/B testing framework for prompt variations
+- [ ] Set up behavioral metrics tracking
+- [ ] Consider multiple competition formats for robustness testing
 
 ---
 
 **Document Purpose**: High-level requirements for integrating multi-agent AI architecture into existing Forex trading framework with Pepperstone API.
 
-**Next Steps**: Review requirements, adapt to existing architecture, implement incrementally starting with infrastructure and MCP servers.
+**Inspiration**: nof1.ai Alpha Arena - validated AI autonomous trading with real money in real markets.
+
+**Next Steps**: Review requirements, adapt to existing architecture, implement "Monk Mode" style prompts with strict guardrails, start with infrastructure and MCP servers.
