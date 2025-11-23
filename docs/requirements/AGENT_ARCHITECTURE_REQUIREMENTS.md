@@ -1,8 +1,12 @@
 # Multi-Agent Forex Trading System - Architecture Requirements
 
-## Overview
+## Document Overview
 
-High-level requirements for implementing a multi-agent AI system for Forex trading using AWS Bedrock Agents with DeepSeek LLM. This document defines the agent architecture, interfaces, and MCP servers needed to integrate with an existing Pepperstone-based trading framework.
+Complete architecture and requirements for an autonomous Forex trading system using AWS Bedrock Agents, DeepSeek LLM, and Pepperstone broker integration. This document consolidates all specifications needed for implementation.
+
+**Status**: Architecture Complete - Ready for Implementation  
+**Last Updated**: November 23, 2025  
+**Version**: 1.0
 
 ## System Architecture
 
@@ -10,11 +14,12 @@ High-level requirements for implementing a multi-agent AI system for Forex tradi
 
 ```
 Orchestrator Agent (Master Coordinator)
-    ├── Technical Analysis Agent
-    ├── Fundamental Analysis Agent  
-    ├── Sentiment Analysis Agent
-    ├── Risk Management Agent
-    └── Execution Agent
+    ├── Technical Analysis Agent (Charts & Indicators)
+    ├── Fundamental Analysis Agent (Economic Data)
+    ├── Correlation & Confluence Agent (DXY, JPY, Correlations) ⭐
+    ├── Sentiment Analysis Agent (News & Social Media)
+    ├── Risk Management Agent (Position Sizing & Validation)
+    └── Execution Agent (Pepperstone Trade Execution)
 ```
 
 ### Technology Stack
@@ -27,150 +32,241 @@ Orchestrator Agent (Master Coordinator)
 
 ## Agent Specifications
 
+## Documentation Structure
+
+```
+docs/
+├── requirements/
+│   ├── AGENT_ARCHITECTURE_REQUIREMENTS.md (this document)
+│   └── RESEARCH_REFERENCES.md
+├── agents/
+│   ├── 01_orchestrator_agent.md
+│   ├── 02_technical_analysis_agent.md
+│   ├── 03_fundamental_analysis_agent.md
+│   ├── 04_correlation_confluence_agent.md ⭐
+│   ├── 05_sentiment_analysis_agent.md
+│   ├── 06_risk_management_agent.md
+│   └── 07_execution_agent.md
+└── mcp-tools/
+    ├── 01_market_data_tools.md
+    ├── 02_economic_data_tools.md
+    ├── 03_news_sentiment_tools.md
+    ├── 04_technical_analysis_tools.md
+    ├── 05_correlation_dxy_tools.md ⭐
+    ├── 06_risk_management_tools.md
+    └── 07_broker_integration_tools.md
+```
+
+## Agent Specifications Summary
+
 ### 1. Orchestrator Agent
 
-**Role**: Central coordinator and final decision maker
+**Role**: Central coordinator and final decision maker  
+**Detailed Spec**: [docs/agents/01_orchestrator_agent.md](../agents/01_orchestrator_agent.md)
 
-**Inputs**:
-- Technical analysis signals
-- Fundamental analysis reports
-- Sentiment scores
-- Risk assessments
-- Current portfolio state
-
-**Outputs**:
-- Trading decisions (BUY/SELL/HOLD/REJECT)
-- Position sizing
-- Stop-loss and take-profit levels
+**Key Features**:
+- Coordinates all specialist agents
+- Requires consensus from ≥2 agents
+- Mandatory risk validation
+- Resolves conflicts with weighted voting
+- Enforces strict guardrails (max 3 positions, no trade without risk approval)
 
 **Decision Logic**:
-- Requires consensus from ≥2 specialized agents
+- Requires ≥2 specialized agents in agreement
 - Always validates with Risk Management Agent
-- Resolves conflicts based on confidence scores and timeframes
+- Checks DXY/JPY alignment for USD/JPY pairs (mandatory)
+- Validates confluence across related pairs
+- Rejects if correlation with existing position >0.8
 - Prioritizes capital preservation
 
 ### 2. Technical Analysis Agent
 
-**Role**: Chart patterns and technical indicators
+**Role**: Chart patterns and technical indicators  
+**Detailed Spec**: [docs/agents/02_technical_analysis_agent.md](../agents/02_technical_analysis_agent.md)
 
-**Responsibilities**:
-- Analyze price action and patterns
-- Calculate technical indicators (RSI, MACD, MA, Bollinger Bands)
-- Identify support/resistance levels
-- Generate entry/exit signals
+**Key Features**:
+- Multi-timeframe analysis (H1, H4, D1)
+- Indicator confluence (requires ≥3 indicators aligned)
+- Pattern recognition
+- Support/resistance identification
+- Strict guardrails: confidence >0.7, R/R ratio ≥2:1
 
-**Required Tools**:
-- Historical price data (OHLCV)
-- Real-time price feeds
-- Technical indicator calculations
+**Indicators**: RSI, MACD, Moving Averages, Bollinger Bands, Support/Resistance
 
 ### 3. Fundamental Analysis Agent
 
-**Role**: Economic and policy analysis
+**Role**: Economic data and central bank policies  
+**Detailed Spec**: [docs/agents/03_fundamental_analysis_agent.md](../agents/03_fundamental_analysis_agent.md)
 
-**Responsibilities**:
-- Monitor economic indicators (GDP, inflation, employment)
-- Analyze central bank policies and interest rates
-- Track economic calendar events
-- Assess geopolitical factors
+**Key Features**:
+- Interest rate differentials (primary driver)
+- Economic calendar monitoring
+- GDP, inflation, employment analysis
+- Central bank stance assessment
+- Flags high-impact events within 24h
 
-**Required Tools**:
-- Economic calendar API
-- Interest rate data
-- Economic indicators (CPI, GDP, etc.)
+**Focus**: Interest rates, GDP, inflation, employment, central bank rhetoric
 
-### 4. Sentiment Analysis Agent
+### 4. Correlation & Confluence Agent ⭐
 
-**Role**: Market sentiment and news analysis
+**Role**: Currency correlations, DXY, and JPY analysis  
+**Detailed Spec**: [docs/agents/04_correlation_confluence_agent.md](../agents/04_correlation_confluence_agent.md)
 
-**Responsibilities**:
-- Analyze financial news
-- Monitor social media sentiment
-- Track institutional positioning (COT reports)
-- Identify market narratives
+**Key Features** (Critical for Forex):
+- **DXY monitoring**: Validates USD pair signals against US Dollar Index
+- **JPY crosses analysis**: Risk-on/risk-off sentiment detection
+- **Currency correlations**: 30-day rolling correlation matrix
+- **Cross-pair confluence**: Validates signals across related pairs
+- **Currency strength index**: Individual currency strength (0-100)
 
-**Required Tools**:
-- News aggregation API
-- Sentiment analysis (NLP)
-- COT reports
-- Social media feeds (optional)
+**Guardrails**: Rejects correlation >0.8, requires confluence >0.6
 
-### 5. Risk Management Agent
+### 5. Sentiment Analysis Agent
 
-**Role**: Portfolio risk assessment and control
+**Role**: News and market sentiment  
+**Detailed Spec**: [docs/agents/05_sentiment_analysis_agent.md](../agents/05_sentiment_analysis_agent.md)
 
-**Responsibilities**:
-- Calculate position sizes
-- Monitor exposure limits
-- Assess correlation risks
-- Calculate Value at Risk (VaR)
-- Enforce risk parameters
+**Key Features**:
+- Financial news aggregation and NLP sentiment
+- Social media monitoring (Twitter, Reddit)
+- COT reports (institutional positioning)
+- Contrarian signals at sentiment extremes
+- Flags extreme sentiment (>0.8 or <-0.8)
 
-**Risk Parameters**:
-- Max risk per trade: 1-2% of account
-- Max exposure per currency: 10%
-- Daily loss limit: 5% of account
-- Min risk/reward ratio: 2:1
+**Sources**: Financial news (primary), institutional positioning, social media
 
-### 6. Execution Agent
+### 6. Risk Management Agent
 
-**Role**: Order execution via Pepperstone
+**Role**: Position sizing and risk validation  
+**Detailed Spec**: [docs/agents/06_risk_management_agent.md](../agents/06_risk_management_agent.md)
 
-**Responsibilities**:
-- Execute trades via existing Pepperstone integration
-- Monitor order status
-- Manage open positions
-- Report execution quality
+**Key Features**:
+- Position size calculation (1-2% risk per trade)
+- VaR and exposure monitoring
+- Correlation checks
+- Final gatekeeper (can reject any trade)
+
+**Strict Guardrails**:
+- Max 2% risk per trade
+- Max 10% exposure per currency
+- Auto-reject if daily loss ≥5%
+- Auto-reject if correlation >0.8
+- Auto-reject if margin level <150%
+
+### 7. Execution Agent
+
+**Role**: Trade execution via Pepperstone  
+**Detailed Spec**: [docs/agents/07_execution_agent.md](../agents/07_execution_agent.md)
+
+**Key Features**:
+- Order placement via Pepperstone API
+- Execution monitoring and slippage tracking
+- Position management
+- Only executes approved trades
+- Mandatory stop-loss on every trade
 
 ## MCP Server Requirements
 
-### Server 1: Market Data
-**Tools**:
-- `get_live_price(pair, timeframe)` - Current price
-- `get_historical_data(pair, start, end, timeframe)` - OHLCV data
-- `get_spread(pair)` - Bid-ask spread
+**Total**: 7 MCP Servers, 35 Tools  
+**Detailed Specifications**: See [docs/mcp-tools/](../mcp-tools/) for complete tool schemas
 
-**Data Source**: Pepperstone API (existing integration)
+### Server 1: Market Data Server
+**Lambda**: `forex-market-data`  
+**Detailed Spec**: [01_market_data_tools.md](../mcp-tools/01_market_data_tools.md)
 
-### Server 2: Economic Data
-**Tools**:
-- `get_economic_calendar(start, end, countries)` - Upcoming events
-- `get_interest_rates(countries)` - Central bank rates
-- `get_economic_indicator(country, indicator, period)` - Historical data
+**Tools** (5):
+- `get_live_price` - Real-time price data
+- `get_historical_data` - OHLCV historical data
+- `get_spread` - Current bid-ask spread
+- `get_tick_data` - Tick-level data for analysis
+- `get_market_hours` - Trading session status
 
-**Data Sources**: Trading Economics API or FRED (free)
+**Data Source**: Pepperstone API (existing integration)  
+**Used By**: Technical Analysis Agent, Correlation Agent
 
-### Server 3: News & Sentiment
-**Tools**:
-- `get_news(keywords, sources, time_range)` - News articles
-- `analyze_sentiment(text)` - NLP sentiment score
-- `get_cot_report(currency)` - Institutional positioning
+### Server 2: Economic Data Server
+**Lambda**: `forex-economic-data`  
+**Detailed Spec**: [02_economic_data_tools.md](../mcp-tools/02_economic_data_tools.md)
 
-**Data Sources**: NewsAPI, CFTC COT reports
+**Tools** (4):
+- `get_economic_calendar` - Upcoming economic events
+- `get_interest_rates` - Central bank rates
+- `get_economic_indicator` - Historical economic data
+- `get_rate_differential` - Interest rate differentials
 
-### Server 4: Technical Analysis
-**Tools**:
-- `calculate_indicator(pair, indicator, params)` - Any indicator
-- `detect_patterns(pair, timeframe)` - Chart patterns
-- `find_support_resistance(pair, timeframe)` - Key levels
+**Data Sources**: FRED API (free), Trading Economics (paid)  
+**Used By**: Fundamental Analysis Agent
 
-**Implementation**: TA-Lib or Pandas-TA
+### Server 3: News & Sentiment Server
+**Lambda**: `forex-news-sentiment`  
+**Detailed Spec**: [03_news_sentiment_tools.md](../mcp-tools/03_news_sentiment_tools.md)
 
-### Server 5: Risk Management
-**Tools**:
-- `calculate_position_size(balance, risk_pct, stop_loss_pips)` - Position sizing
-- `calculate_var(portfolio, confidence)` - Value at Risk
-- `check_correlation(pairs)` - Currency correlation
-- `validate_trade(trade, portfolio, risk_params)` - Risk approval
+**Tools** (4):
+- `get_news` - News articles with sentiment
+- `analyze_sentiment` - NLP sentiment analysis
+- `get_social_sentiment` - Social media sentiment
+- `get_cot_report` - CFTC Commitment of Traders
 
-### Server 6: Broker Integration
-**Tools**:
-- `place_order(pair, side, size, type, sl, tp)` - Execute trade
-- `get_open_positions()` - List positions
-- `close_position(position_id)` - Close trade
-- `get_account_info()` - Balance and margin
+**Data Sources**: NewsAPI, CFTC COT reports, Twitter API  
+**Used By**: Sentiment Analysis Agent
 
-**Integration**: Use existing Pepperstone API implementation
+### Server 4: Technical Analysis Server
+**Lambda**: `forex-technical-analysis`  
+**Detailed Spec**: [04_technical_analysis_tools.md](../mcp-tools/04_technical_analysis_tools.md)
+
+**Tools** (6):
+- `calculate_indicator` - Any technical indicator
+- `detect_patterns` - Chart pattern recognition
+- `find_support_resistance` - Key price levels
+- `calculate_pivot_points` - Pivot levels
+- `analyze_volume` - Volume analysis
+- `get_fibonacci_levels` - Fibonacci retracements
+
+**Implementation**: TA-Lib or Pandas-TA  
+**Used By**: Technical Analysis Agent
+
+### Server 5: Correlation & DXY Server ⭐
+**Lambda**: `forex-correlation-dxy`  
+**Detailed Spec**: [05_correlation_dxy_tools.md](../mcp-tools/05_correlation_dxy_tools.md)
+
+**Tools** (7):
+- `get_dxy_data` - US Dollar Index data
+- `get_jpy_crosses` - All JPY pairs for risk sentiment
+- `calculate_correlation` - Pair correlation matrix
+- `get_currency_strength` - Individual currency strength
+- `check_confluence` - Cross-pair signal validation
+- `get_related_pairs` - Find correlated pairs
+- `analyze_divergence` - Price divergence detection
+
+**Data Sources**: TradingView, Investing.com  
+**Used By**: Correlation & Confluence Agent (critical for Forex)
+
+### Server 6: Risk Management Server
+**Lambda**: `forex-risk-management`  
+**Detailed Spec**: [06_risk_management_tools.md](../mcp-tools/06_risk_management_tools.md)
+
+**Tools** (4):
+- `calculate_position_size` - Optimal position sizing
+- `calculate_var` - Value at Risk (95% confidence)
+- `check_exposure` - Current currency exposure
+- `validate_trade` - Trade validation against risk rules
+
+**Implementation**: Custom risk calculations  
+**Used By**: Risk Management Agent
+
+### Server 7: Broker Integration Server
+**Lambda**: `forex-broker-integration`  
+**Detailed Spec**: [07_broker_integration_tools.md](../mcp-tools/07_broker_integration_tools.md)
+
+**Tools** (5):
+- `place_order` - Execute trade (market/limit/stop)
+- `get_open_positions` - List all positions
+- `close_position` - Close a position
+- `get_account_info` - Balance and margin info
+- `modify_position` - Update SL/TP
+
+**Integration**: Existing Pepperstone API implementation  
+**Used By**: Execution Agent, Risk Management Agent
 
 ## Interface Definitions
 

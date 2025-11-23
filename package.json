@@ -1,0 +1,19 @@
+{
+  "name": "forexai",
+  "version": "1.0.0",
+  "description": "Multi-Agent Forex Trading System using AWS Bedrock Agents, DeepSeek LLM, and Pepperstone API",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dmenditto/ForexAI.git"
+  },
+  "keywords": ["forex", "trading", "ai", "aws-bedrock", "deepseek", "multi-agent"],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dmenditto/ForexAI/issues"
+  },
+  "homepage": "https://github.com/dmenditto/ForexAI#readme"
+}
