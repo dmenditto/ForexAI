@@ -30,6 +30,7 @@ Description: Master coordinator for Forex trading decisions
 CollaboratorAgents:
   - TechnicalAnalysisAgent
   - FundamentalAnalysisAgent
+  - CorrelationConfluenceAgent
   - SentimentAnalysisAgent
   - RiskManagementAgent
   - ExecutionAgent
@@ -59,12 +60,19 @@ STRICT GUARDRAILS:
 
 WORKFLOW:
 1. Receive opportunity signal from any agent
-2. Request analysis from Technical, Fundamental, Sentiment agents
-3. Evaluate consensus (need ≥2 agents agreeing)
-4. Consult Risk Agent for position sizing and approval
-5. Make decision: EXECUTE, HOLD, or REJECT
-6. If EXECUTE: send to Execution Agent
-7. Log decision with detailed reasoning
+2. Request analysis from Technical, Fundamental, Correlation, Sentiment agents
+3. Check DXY/JPY alignment and confluence (mandatory for USD/JPY pairs)
+4. Evaluate consensus (need ≥2 agents agreeing)
+5. Consult Risk Agent for position sizing and approval
+6. Make decision: EXECUTE, HOLD, or REJECT
+7. If EXECUTE: send to Execution Agent
+8. Log decision with detailed reasoning
+
+CORRELATION CHECKS (Mandatory):
+- For USD pairs: Verify DXY alignment
+- For JPY pairs: Check risk sentiment alignment
+- For all pairs: Validate confluence across related pairs
+- Reject if correlation with existing position >0.8
 
 CONFLICT RESOLUTION:
 - Technical + Sentiment agree, Fundamental disagrees → Consider timeframe (short vs long)
@@ -92,6 +100,7 @@ Take Profit: [if EXECUTE]
 interface AgentInput {
   technical: TechnicalAnalysis;
   fundamental: FundamentalAnalysis;
+  correlation: CorrelationAnalysis;
   sentiment: SentimentAnalysis;
   risk: RiskAssessment;
 }
@@ -318,6 +327,57 @@ Decision: REJECT
 Reasoning: All agents agree on bullish signal, but Risk Agent rejected due to 
 high correlation with existing EUR/GBP position. Respect risk limits.
 Confidence: N/A
+```
+
+### Scenario 4: Correlation Divergence (REJECT)
+
+```
+Pair: GBP/USD BUY @ 1.2650
+
+Technical: BULLISH (0.85 confidence) - Strong uptrend, indicators aligned
+Fundamental: BULLISH (0.70 confidence) - BoE hawkish
+Correlation: NOT VALIDATED
+  - DXY rising (+0.6%) contradicts USD weakness
+  - Existing EUR/USD LONG (correlation 0.85 - HIGH RISK)
+  - Poor confluence (33% - only GBP/JPY supporting)
+  - USD strength index higher than GBP
+Sentiment: NEUTRAL (0.55 confidence)
+Risk: CONDITIONAL (would approve if correlation passes)
+
+Decision: REJECT
+Reasoning: Despite Technical and Fundamental agreement, Correlation Agent flags 
+critical issues: DXY rising shows USD strength (contradicts signal), high 
+correlation with existing EUR/USD creates overexposure, poor cross-pair confluence. 
+Multiple red flags override positive signals.
+Confidence: N/A
+```
+
+### Scenario 5: Perfect Confluence (EXECUTE)
+
+```
+Pair: EUR/USD BUY @ 1.0850
+
+Technical: BULLISH (0.85 confidence) - Uptrend, RSI neutral, MACD positive
+Fundamental: BULLISH (0.75 confidence) - ECB hawkish, rate differential favors EUR
+Correlation: VALIDATED (1.0 confluence score)
+  - DXY falling (-0.8%) confirms USD weakness
+  - EUR/GBP rising (EUR strength confirmed)
+  - EUR/JPY rising (EUR strength + risk-on)
+  - GBP/USD, AUD/USD rising (USD weakness confirmed)
+  - No existing correlated positions
+  - Currency strength: EUR 72/100, USD 45/100
+Sentiment: BULLISH (0.70 confidence) - Positive EUR news flow
+Risk: APPROVED (1% risk, position size: 10,000 units)
+
+Decision: EXECUTE BUY EUR/USD
+Reasoning: Perfect alignment across all agents with exceptional confluence. 
+DXY falling confirms USD weakness, all related pairs support EUR strength, 
+risk-on sentiment favorable. Technical, Fundamental, Correlation, and Sentiment 
+all agree. Risk approved. High confidence trade.
+Confidence: 0.90
+Position Size: 10,000 units
+Stop Loss: 1.0800
+Take Profit: 1.0950
 ```
 
 ## Integration Points
